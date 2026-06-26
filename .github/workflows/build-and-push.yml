@@ -227,20 +227,21 @@ jobs:
         run: |
           SERVICE="${{ matrix.service }}"
           VERSION="${{ env.IMAGE_VERSION }}"
-          # Convert to lowercase for ghcr.io compatibility
-          REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          REGISTRY_REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          # Convert to lowercase for ghcr.io compatibility (use awk for portability)
+          REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | awk '{print tolower($0)}')
+          REGISTRY_REPO=$(echo "${{ github.event.repository.name }}" | awk '{print tolower($0)}')
           REGISTRY="ghcr.io/${REGISTRY_OWNER}/${REGISTRY_REPO}"
-          
+
           echo "=== Tag Generation ==="
           echo "Service: $SERVICE"
           echo "Version: $VERSION"
           echo "Build type: ${{ env.BUILD_TYPE }}"
+          echo "Registry: $REGISTRY"
           echo ""
-          
+
           # Base tags (always included)
           TAGS="${REGISTRY}/${SERVICE}:${VERSION}"
-          
+
           # Add 'latest' tags only for release builds (not dev or manual)
           if [ "${{ env.IS_DEV_BUILD }}" != "true" ]; then
             echo "✓ Adding 'latest' tags (release build)"
@@ -248,7 +249,7 @@ jobs:
           else
             echo "⚠️ Skipping 'latest' tags (${{ env.BUILD_TYPE }} build)"
           fi
-          
+
           echo ""
           echo "Generated tags:"
           echo "$TAGS" | tr ',' '\n'
@@ -281,9 +282,13 @@ jobs:
       - name: Verify multi-architecture manifest
         run: |
           echo "Verifying multi-architecture manifest for ${{ matrix.service }}..."
-          
+
+          # Convert to lowercase for ghcr.io compatibility (use awk for portability)
+          REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | awk '{print tolower($0)}')
+          REGISTRY_REPO=$(echo "${{ github.event.repository.name }}" | awk '{print tolower($0)}')
+
           # Use version tag for verification (always exists)
-          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.service }}:${{ env.IMAGE_VERSION }}"
+          IMAGE_TAG="ghcr.io/${REGISTRY_OWNER}/${REGISTRY_REPO}/${{ matrix.service }}:${{ env.IMAGE_VERSION }}"
           
           echo "Inspecting: $IMAGE_TAG"
           docker buildx imagetools inspect "$IMAGE_TAG"

@@ -453,20 +453,6 @@ export default function App(){
           <MessageList messages={messages} />
           <MessageInput onSend={onSend} />
         </Grow>
-        <a
-          href="https://tgo.ai"
-          target="_blank"
-          rel="noopener noreferrer"
-          css={css`
-            display:block;
-            text-align:center;
-            font-size:12px;
-            color: var(--text-muted, #9ca3af);
-            padding: 6px 0;
-            text-decoration: none;
-            &:hover { color: var(--text-secondary, #6b7280); }
-          `}
-        >Powered by tgo.ai</a>
       </WidgetWrap>
       <ImagePreviewProvider />
     </ThemeProvider>

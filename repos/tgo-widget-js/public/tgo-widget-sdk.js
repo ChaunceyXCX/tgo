@@ -46,7 +46,7 @@
     const container = document.createElement('div');
     container.id = UI_CONTAINER_ID;
     Object.assign(container.style, {
-      zIndex: 2147483000,
+      zIndex: 'var(--tgo-container-z-index, 2147483000)',
       position: 'fixed',
       bottom: '84px',
       right: '20px',
@@ -56,10 +56,10 @@
       minHeight: '80px',
       width: 'min(400px, max(0px, calc(-20px + 100vw)))',
       maxHeight: '704px',
-      borderRadius: '16px',
+      borderRadius: 'var(--tgo-container-radius, 16px)',
       overflow: 'hidden',
-      boxShadow: 'rgba(9, 14, 21, 0.16) 0px 5px 40px 0px',
-      background: '#fff',
+      boxShadow: 'var(--tgo-container-shadow, rgba(9, 14, 21, 0.16) 0px 5px 40px 0px)',
+      background: 'var(--tgo-container-bg, #ffffff)',
       // Closed by default
       transform: 'scale(0)',
       opacity: '0',
@@ -98,13 +98,39 @@
   function createLauncher(){
     const btn = document.createElement('button');
     btn.setAttribute('aria-label', 'Open chat');
+
+    // ---- Custom style properties ----
+    // Host page can override via CSS custom properties on :root
+    // e.g. :root { --tgo-ball-size: 48px; --tgo-ball-bg: #1a1a2e; }
+    var S_SZ = 'var(--tgo-ball-size, 56px)';
+    var S_Z = 'var(--tgo-ball-z-index, 2147483001)';
+    var S_OFF = 'var(--tgo-ball-offset, 16px)';
+    var S_SHADOW = 'var(--tgo-ball-shadow, 0 8px 20px rgba(0,0,0,.2))';
+    var S_BG = 'var(--tgo-ball-bg, #ffffff)';
+    var S_COLOR = 'var(--tgo-ball-color, #111827)';
+    var S_BRAND_BG = 'var(--tgo-ball-brand-bg, var(--primary, #2f80ed))';
+    var S_BRAND_COLOR = 'var(--tgo-ball-brand-color, #ffffff)';
+
     Object.assign(btn.style, {
-      position:'fixed', right:'16px', bottom:'16px', width:'56px', height:'56px', borderRadius:'50%',
-      display:'block', cursor:'pointer', zIndex:2147483001,
-      background:'#fff', color:'#111827', border:'0',
-      boxShadow:'0 8px 20px rgba(0,0,0,.2)',
-      transform:'scale(1)', opacity:'1',
-      transition:'transform 120ms ease-out, opacity 220ms ease-out, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, top 200ms, bottom 200ms, left 200ms, right 200ms'
+      position:'fixed',
+      right: S_OFF,
+      bottom: S_OFF,
+      width: S_SZ,
+      height: S_SZ,
+      borderRadius:'50%',
+      display:'block',
+      cursor:'grab',
+      zIndex: S_Z,
+      background: S_BG,
+      color: S_COLOR,
+      border:'0',
+      boxShadow: S_SHADOW,
+      transform:'scale(1)',
+      opacity:'1',
+      userSelect:'none',
+      WebkitUserSelect:'none',
+      touchAction:'none',
+      transition:'transform 120ms ease-out, opacity 220ms ease-out, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, top 100ms, bottom 100ms, left 100ms, right 100ms'
     });
 
     // Center content container
@@ -183,8 +209,8 @@
         btn.setAttribute('aria-label', 'Close chat');
         // remove logo image if present, show ✕ icon
         contentWrap.innerHTML = '✕';
-        btn.style.background = 'var(--primary, #2f80ed)';
-        btn.style.color = '#fff';
+        btn.style.background = S_BRAND_BG;
+        btn.style.color = S_BRAND_COLOR;
         btn.style.boxShadow = isDarkMode ? '0 8px 20px rgba(0,0,0,.4)' : '0 8px 20px rgba(0,0,0,.2)';
         btn.style.opacity = '1';
       } else {
@@ -204,11 +230,12 @@
     btn.setPosition = (pos)=>{
       try {
         btn.style.top = 'auto'; btn.style.bottom = 'auto'; btn.style.left = 'auto'; btn.style.right = 'auto';
+        var off = 'var(--tgo-ball-offset, 16px)';
         switch(String(pos||'bottom-right')){
-          case 'bottom-left': btn.style.bottom = '16px'; btn.style.left = '16px'; break;
-          case 'top-right': btn.style.top = '16px'; btn.style.right = '16px'; break;
-          case 'top-left': btn.style.top = '16px'; btn.style.left = '16px'; break;
-          case 'bottom-right': default: btn.style.bottom = '16px'; btn.style.right = '16px'; break;
+          case 'bottom-left': btn.style.bottom = off; btn.style.left = off; break;
+          case 'top-right': btn.style.top = off; btn.style.right = off; break;
+          case 'top-left': btn.style.top = off; btn.style.left = off; break;
+          case 'bottom-right': default: btn.style.bottom = off; btn.style.right = off; break;
         }
       } catch(_){}
     };
@@ -301,7 +328,7 @@
 
     function applyPosition(pos){
       try {
-        const c = state.uiContainer; if(!c) return;
+        var c = state.uiContainer; if(!c) return;
         c.style.top = 'auto'; c.style.bottom = 'auto'; c.style.left = 'auto'; c.style.right = 'auto';
         switch(String(pos||'bottom-right')){
           case 'bottom-left': c.style.bottom = '84px'; c.style.left = '20px'; c.style.transformOrigin = 'left bottom'; break;
@@ -310,6 +337,14 @@
           case 'bottom-right': default: c.style.bottom = '84px'; c.style.right = '20px'; c.style.transformOrigin = 'right bottom'; break;
         }
         try { state.launcher && state.launcher.setPosition && state.launcher.setPosition(pos); } catch(_){ }
+        // Clear drag state when a preset position is applied
+        if(state.launcher){
+          state.launcher._tgo_dragged = false;
+          state.launcher._tgo_pos = null;
+          // Re-enable right/bottom based positioning
+          state.launcher.style.left = 'auto';
+          state.launcher.style.top = 'auto';
+        }
       } catch(e) { /* noop */ }
     }
 
@@ -340,10 +375,117 @@
       // Launcher
       const launcher = createLauncher();
       state.launcher = launcher;
-      launcher.addEventListener('click', ()=>{ state.isOpen ? apiHide() : apiShow(); });
       document.body.appendChild(launcher);
       // ensure launcher reflects current state
       try { launcher.setOpenVisual && launcher.setOpenVisual(state.isOpen); } catch {}
+
+      // ---- Draggable launcher ----
+      (function(){
+        var drag = { active: false, startX: 0, startY: 0, origLeft: 0, origTop: 0, moved: false };
+        var THRESHOLD = 4; // px to distinguish click vs drag
+
+        function px(v){ return v + 'px'; }
+
+        function convertToLeftTop(){
+          var rect = launcher.getBoundingClientRect();
+          launcher.style.left = px(rect.left);
+          launcher.style.top = px(rect.top);
+          launcher.style.right = 'auto';
+          launcher.style.bottom = 'auto';
+        }
+
+        function syncContainerToLauncher(){
+          var c = state.uiContainer; if(!c) return;
+          var lr = launcher.getBoundingClientRect();
+          var gap = 12;
+          c.style.top = 'auto'; c.style.bottom = 'auto'; c.style.left = 'auto'; c.style.right = 'auto';
+
+          // Determine screen quadrant the launcher is in for natural container placement
+          var vCenter = window.innerHeight / 2;
+          var hCenter = window.innerWidth / 2;
+          var aboveCenter = (lr.top + lr.height / 2) < vCenter;
+          var leftOfCenter = (lr.left + lr.width / 2) < hCenter;
+
+          // Vertical: open downwards if launcher is in top half, otherwise open upwards
+          if(aboveCenter){
+            c.style.top = px(lr.bottom + gap);
+          } else {
+            c.style.bottom = px(window.innerHeight - lr.top + gap);
+          }
+
+          // Horizontal: open to the right if launcher is on left side, otherwise to the left
+          if(leftOfCenter){
+            c.style.left = px(Math.max(gap, lr.left));
+            c.style.transformOrigin = 'left ' + (aboveCenter ? 'top' : 'bottom');
+          } else {
+            c.style.right = px(Math.max(gap, window.innerWidth - lr.right));
+            c.style.transformOrigin = 'right ' + (aboveCenter ? 'top' : 'bottom');
+          }
+        }
+
+        function onStart(e){
+          if(e.button !== undefined && e.button !== 0) return;
+          // Disable transitions during drag
+          launcher.style.transition = 'none';
+          convertToLeftTop();
+          launcher._tgo_dragged = false;
+          var pt = e.touches ? e.touches[0] : e;
+          drag.startX = pt.clientX;
+          drag.startY = pt.clientY;
+          drag.origLeft = parseInt(launcher.style.left, 10) || launcher.getBoundingClientRect().left;
+          drag.origTop = parseInt(launcher.style.top, 10) || launcher.getBoundingClientRect().top;
+          drag.moved = false;
+          drag.active = true;
+          launcher.style.cursor = 'grabbing';
+          if(e.touches) e.preventDefault();
+        }
+
+        function onMove(e){
+          if(!drag.active) return;
+          var pt = e.touches ? e.touches[0] : e;
+          var dx = pt.clientX - drag.startX;
+          var dy = pt.clientY - drag.startY;
+          if(Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD){
+            drag.moved = true;
+          }
+          if(drag.moved){
+            var newLeft = Math.max(0, Math.min(window.innerWidth - launcher.offsetWidth, drag.origLeft + dx));
+            var newTop = Math.max(0, Math.min(window.innerHeight - launcher.offsetHeight, drag.origTop + dy));
+            launcher.style.left = px(newLeft);
+            launcher.style.top = px(newTop);
+            syncContainerToLauncher();
+            if(e.preventDefault) e.preventDefault();
+          }
+        }
+
+        function onEnd(){
+          if(!drag.active) return;
+          drag.active = false;
+          launcher.style.cursor = 'grab';
+          launcher.style.transition = 'transform 120ms ease-out, opacity 220ms ease-out, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, top 100ms, bottom 100ms, left 100ms, right 100ms';
+          if(drag.moved){
+            launcher._tgo_dragged = true;
+            // Store current position for reference
+            launcher._tgo_pos = { left: launcher.style.left, top: launcher.style.top };
+          }
+        }
+
+        launcher.addEventListener('mousedown', onStart);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        launcher.addEventListener('touchstart', onStart, { passive: false });
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+
+        // Drag-aware click: prevent toggle when drag occurred
+        launcher.addEventListener('click', function(e){
+          if(launcher._tgo_dragged){
+            launcher._tgo_dragged = false;
+            return;
+          }
+          state.isOpen ? apiHide() : apiShow();
+        });
+      })();
 
       // Start controller immediately after UI is prepared
       const ctrl = createControllerFrame(baseUrl, opts);

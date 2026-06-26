@@ -227,7 +227,10 @@ jobs:
         run: |
           SERVICE="${{ matrix.service }}"
           VERSION="${{ env.IMAGE_VERSION }}"
-          REGISTRY="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
+          # Convert to lowercase for ghcr.io compatibility
+          REGISTRY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REGISTRY_REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          REGISTRY="ghcr.io/${REGISTRY_OWNER}/${REGISTRY_REPO}"
           
           echo "=== Tag Generation ==="
           echo "Service: $SERVICE"

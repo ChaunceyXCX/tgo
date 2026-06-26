@@ -1,4 +1,4 @@
-name: Build and push service images to multiple registries
+name: Build and push service images to GitHub Container Registry
 
 on:
   push:
@@ -222,24 +222,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Log in to Alibaba Cloud Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: registry.cn-shanghai.aliyuncs.com
-          username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
-          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
-
       - name: Generate image tags
         id: tags
         run: |
           SERVICE="${{ matrix.service }}"
           VERSION="${{ env.IMAGE_VERSION }}"
+          REGISTRY="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
           
           echo "=== Tag Generation ==="
           echo "Service: $SERVICE"
@@ -248,16 +236,12 @@ jobs:
           echo ""
           
           # Base tags (always included)
-          TAGS="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/${SERVICE}:${VERSION}"
-          TAGS="${TAGS},tgoai/${SERVICE}:${VERSION}"
-          TAGS="${TAGS},registry.cn-shanghai.aliyuncs.com/tgoai/${SERVICE}:${VERSION}"
+          TAGS="${REGISTRY}/${SERVICE}:${VERSION}"
           
           # Add 'latest' tags only for release builds (not dev or manual)
           if [ "${{ env.IS_DEV_BUILD }}" != "true" ]; then
             echo "✓ Adding 'latest' tags (release build)"
-            TAGS="${TAGS},ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/${SERVICE}:latest"
-            TAGS="${TAGS},tgoai/${SERVICE}:latest"
-            TAGS="${TAGS},registry.cn-shanghai.aliyuncs.com/tgoai/${SERVICE}:latest"
+            TAGS="${TAGS},${REGISTRY}/${SERVICE}:latest"
           else
             echo "⚠️ Skipping 'latest' tags (${{ env.BUILD_TYPE }} build)"
           fi

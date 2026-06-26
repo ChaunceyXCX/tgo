@@ -118,7 +118,7 @@ export const usePlatformStore = create<PlatformState>((set, get) => ({
       const cfg = (info?.config ?? {}) as PlatformConfig
       console.log('[Platform] Loaded config:', cfg)
       set(s => ({
-        config: { ...s.config, ...cfg },
+        config: { ...s.config, ...cfg, logo_url: info.logo_url },
       }))
 
       // Apply display_mode: if set, use it as default (unless user has explicitly toggled before)

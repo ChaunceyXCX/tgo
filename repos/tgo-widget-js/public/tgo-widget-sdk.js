@@ -382,7 +382,7 @@
       // ---- Draggable launcher ----
       (function(){
         var drag = { active: false, startX: 0, startY: 0, origLeft: 0, origTop: 0, moved: false };
-        var THRESHOLD = 4; // px to distinguish click vs drag
+        var THRESHOLD = 1; // px to distinguish click vs drag
 
         function px(v){ return v + 'px'; }
 
@@ -425,7 +425,7 @@
 
         function onStart(e){
           if(e.button !== undefined && e.button !== 0) return;
-          // Disable transitions during drag
+          if(drag.active) return;
           launcher.style.transition = 'none';
           convertToLeftTop();
           launcher._tgo_dragged = false;
@@ -448,14 +448,12 @@
           if(Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD){
             drag.moved = true;
           }
-          if(drag.moved){
-            var newLeft = Math.max(0, Math.min(window.innerWidth - launcher.offsetWidth, drag.origLeft + dx));
-            var newTop = Math.max(0, Math.min(window.innerHeight - launcher.offsetHeight, drag.origTop + dy));
-            launcher.style.left = px(newLeft);
-            launcher.style.top = px(newTop);
-            syncContainerToLauncher();
-            if(e.preventDefault) e.preventDefault();
-          }
+          var newLeft = Math.max(0, Math.min(window.innerWidth - launcher.offsetWidth, drag.origLeft + dx));
+          var newTop = Math.max(0, Math.min(window.innerHeight - launcher.offsetHeight, drag.origTop + dy));
+          launcher.style.left = px(newLeft);
+          launcher.style.top = px(newTop);
+          syncContainerToLauncher();
+          if(drag.moved && e.preventDefault) e.preventDefault();
         }
 
         function onEnd(){
